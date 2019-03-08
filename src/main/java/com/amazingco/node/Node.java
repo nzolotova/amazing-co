@@ -1,34 +1,34 @@
 package com.amazingco.node;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.UUID;
 
 @Entity
 @AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "NODE")
+@Builder
 @Getter
 @Setter
+@NodeConstraint
 class Node {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "ID", columnDefinition = "BINARY(16) NOT NULL", unique = true)
+    @Column(name = "ID", unique = true)
     private UUID id;
 
     @ManyToOne
-    @JoinColumn(name = "PARENT_ID", nullable = true)
+    @JoinColumn(name = "PARENT_ID")
     private Node parent;
 
     @OneToOne
-    @JoinColumn(name = "ROOT_ID", nullable = false)
+    @JoinColumn(name = "ROOT_ID")
     private Node root;
 
-    @Column(name = "HEIGHT", nullable = false)
+    @Column(name = "HEIGHT")
     private int height;
-
 
 }
