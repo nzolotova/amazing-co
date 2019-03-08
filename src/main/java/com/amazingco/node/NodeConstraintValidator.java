@@ -11,7 +11,7 @@ public class NodeConstraintValidator implements ConstraintValidator<NodeConstrai
     }
 
     private boolean hasParentNodeAndHeightIsHigher(Node node) {
-        return node.getParent().getParent()!= null && node.getHeight() > node.getParent().getHeight();
+        return node.getParent() != null && node.getHeight() > node.getParent().getHeight();
     }
 
     private boolean isParentNode(Node node) {
