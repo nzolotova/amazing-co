@@ -1,15 +1,20 @@
 package com.amazingco.node;
 
+import lombok.SneakyThrows;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.util.UUID;
+
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -40,13 +45,12 @@ public class NodeRestIntegrationTest {
         givenTreeWithNodes();
 
         //when
-        resultActions = mockMvc.perform(get("/nodes/{nodeId}/children", root.getId()));
+        whenGetChildren(root.getId());
 
         //then
         resultActions.andExpect(status().isOk())
                 .andExpect(jsonPath("children", hasSize(4)))
                 .andDo(print());
-
     }
 
     @Test
@@ -56,30 +60,57 @@ public class NodeRestIntegrationTest {
         givenTreeWithNodes();
 
         //when
-        resultActions = mockMvc.perform(get("/nodes/{nodeId}/children", nodeToCheck.getId()));
+        whenGetChildren(nodeToCheck.getId());
 
         //then
         resultActions.andExpect(status().isOk())
                 .andExpect(jsonPath("children", hasSize(4)))
                 .andDo(print());
-
     }
 
     @Test
-    public void should_update_parent_node() throws Exception{
+    public void should_fail_to_get_children_for_non_existing_node() throws Exception {
 
         //given
         givenTreeWithNodes();
 
         //when
-        resultActions = mockMvc.perform(patch("/nodes/{nodeId}/parent/{parentId}", nodeToCheck.getId(), root.getId()));
+        whenGetChildren(UUID.randomUUID());
 
         //then
-        resultActions.andExpect(status().isOk())
-                .andExpect(jsonPath("children", hasSize(4)))
+        resultActions.andExpect(status().isNotFound())
                 .andDo(print());
+    }
+
+    @Test
+    public void should_update_node_with_new_parent_node() throws Exception {
+
+        //given
+        givenTreeWithNodes();
+
+        //when
+        whenUpdateParentWithRootNode(nodeToCheck.getId());
+
+        //then
+        thenTheHeightIsUpdatedAndParentNodeIsRoot();
+        thenChildrenNodesHaveNewHeight();
 
     }
+
+    @Test
+    public void should_fail_to_update_non_existing_node() throws Exception {
+
+        //given
+        givenTreeWithNodes();
+
+        //when
+        whenUpdateParentWithRootNode(UUID.randomUUID());
+
+        //then
+        resultActions.andExpect(status().isNotFound())
+                .andDo(print());
+    }
+
 
     private void givenTreeWithNodes() {
         root = Node.builder().build();
@@ -110,5 +141,36 @@ public class NodeRestIntegrationTest {
         nodeRepository.saveAndFlush(node8);
 
     }
+
+    private void whenGetChildren(UUID nodeId) throws Exception {
+        resultActions = mockMvc.perform(get("/nodes/{nodeId}/children", nodeId));
+    }
+
+    @SneakyThrows
+    private void thenChildrenNodesHaveNewHeight() {
+        whenGetChildren(nodeToCheck.getId());
+
+        resultActions
+                .andExpect(jsonPath("children[0].height", is(2)))
+                .andExpect(jsonPath("children[1].height", is(2)))
+                .andExpect(jsonPath("children[2].height", is(2)))
+                .andExpect(jsonPath("children[3].height", is(3)));
+    }
+
+    private void whenUpdateParentWithRootNode(UUID id) throws Exception {
+        resultActions = mockMvc.perform(
+                patch("/nodes/{nodeId}/parent", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"parentId\" : \"" + root.getId().toString() + "\"}"))
+        ;
+    }
+
+    private void thenTheHeightIsUpdatedAndParentNodeIsRoot() throws Exception {
+        resultActions.andExpect(status().isOk())
+                .andExpect(jsonPath("height", is(1)))
+                .andExpect(jsonPath("parent.id", is(root.getId().toString())))
+                .andDo(print());
+    }
+
 
 }

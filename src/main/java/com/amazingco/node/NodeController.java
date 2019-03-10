@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,16 +32,16 @@ public class NodeController {
 
         return node.map(node1 -> nodeService.getChildren(node1))
                 .map(children -> ResponseEntity.ok(new GetChildrenResponse(children)))
-                .get();
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PatchMapping("/{nodeId}/parent")
     public ResponseEntity<Node> updateParent(@PathVariable("nodeId") Optional<Node> node,
-                                             @RequestBody UUID parentId) {
+                                             @RequestBody UpdateParentRequest updateParentRequest) {
 
-        return node.map(currentNode -> nodeService.updateParentNode(currentNode, parentId))
+        return node.map(currentNode -> nodeService.updateParent(currentNode, updateParentRequest.getParentId()))
                 .map(updatedNode -> ResponseEntity.ok().body(updatedNode))
-                .get();
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @Getter
@@ -62,6 +63,17 @@ public class NodeController {
         private UUID parentId;
 
         private UUID rootId;
+
+    }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Getter
+    static class UpdateParentRequest {
+
+        @NotNull
+        private UUID parentId;
 
     }
 }
