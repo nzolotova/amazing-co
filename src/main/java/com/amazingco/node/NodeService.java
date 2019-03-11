@@ -30,20 +30,30 @@ class NodeService {
         }
     }
 
-    private void findChildren(UUID id) {
-        List<Node> currentChildren = nodeRepository.findByParentId(id);
+    Node updateParent(Node currentNode, UUID parentNodeId) {
+        Optional<Node> parentNode = nodeRepository.findById(parentNodeId);
 
-        children.addAll(currentChildren);
+        return parentNode.map(parent -> {
+            int newNodeHeight = parent.getHeight() + 1;
+            int diffHeight = currentNode.getHeight() - newNodeHeight;
+            currentNode.setHeight(newNodeHeight);
+            currentNode.setParent(parent);
 
-        currentChildren.forEach(child -> findChildren(child.getId()));
+            updateChildrenNodesHeight(currentNode, diffHeight);
+
+            log.info("Node with id = %s and its children are updated.", currentNode.getId());
+
+            return nodeRepository.saveAndFlush(currentNode);
+        }).orElseThrow(() -> new NodeException(String.format("Node with the id = %s does not exist", parentNodeId)));
     }
 
     Node createNode(NodePayload nodePayload) {
-        if(nodePayload.getParentId() == null){
-           return nodeRepository.saveAndFlush(Node.builder().build());
-        }
 
         validatePayload(nodePayload);
+
+        if (nodePayload.getParentId() == null) {
+            return nodeRepository.saveAndFlush(Node.builder().build());
+        }
 
         Optional<Node> parentNode = nodeRepository.findById(nodePayload.getParentId());
         Optional<Node> rootNode = nodeRepository.findById(nodePayload.getRootId());
@@ -63,37 +73,40 @@ class NodeService {
         return newNode;
     }
 
+    private void findChildren(UUID id) {
+        List<Node> currentChildren = nodeRepository.findByParentId(id);
+
+        children.addAll(currentChildren);
+
+        currentChildren.forEach(child -> findChildren(child.getId()));
+    }
+
     private void validatePayload(NodePayload nodePayload) {
-        if(nodePayload.getParentId() != null && nodePayload.getRootId() == null){
+        if (hasParentAndNoRoot(nodePayload) || hasRootAndNoParent(nodePayload)) {
             throw new NodeException("Child node must have root and parent node");
         }
     }
 
+    private boolean hasRootAndNoParent(NodePayload nodePayload) {
+        return nodePayload.getParentId() == null && nodePayload.getRootId() != null;
+    }
+
+    private boolean hasParentAndNoRoot(NodePayload nodePayload) {
+        return nodePayload.getParentId() != null && nodePayload.getRootId() == null;
+    }
+
     private void validateParentAndRootNodes(NodePayload node, Optional<Node> parentNode, Optional<Node> rootNode) {
-        if(!parentNode.isPresent()){
+        if (!parentNode.isPresent()) {
             throw new NodeException(String.format("Node with the id = %s does not exist", node.getParentId()));
         }
 
-        if(!rootNode.isPresent()){
+        if (!rootNode.isPresent()) {
             throw new NodeException(String.format("Node with the id = %s does not exist", node.getRootId()));
         }
-    }
 
-    Node updateParent(Node currentNode, UUID parentNodeId) {
-        Optional<Node> parentNode = nodeRepository.findById(parentNodeId);
-
-        return parentNode.map(parent -> {
-            int newNodeHeight = parent.getHeight() + 1;
-            int diffHeight = currentNode.getHeight() - newNodeHeight;
-            currentNode.setHeight(newNodeHeight);
-            currentNode.setParent(parent);
-
-            updateChildrenNodesHeight(currentNode, diffHeight);
-
-            log.info("Node with id = %s and its children are updated.", currentNode.getId() );
-
-            return nodeRepository.saveAndFlush(currentNode);
-        }).orElseThrow(() -> new NodeException(String.format("Node with the id = %s does not exist", parentNodeId)));
+        if (rootNode.get().getParent() != null) {
+            throw new NodeException(String.format("Node with the id = %s can not be set as a root node", rootNode.get().getId()));
+        }
     }
 
     private void updateChildrenNodesHeight(Node currentNode, int diffHeight) {

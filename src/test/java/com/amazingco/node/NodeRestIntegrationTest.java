@@ -9,7 +9,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -47,7 +46,7 @@ public class NodeRestIntegrationTest {
     private NodePayload nodePayload;
 
     @Before
-    public void setUp(){
+    public void setUp() {
         nodeRepository.deleteAll();
     }
 
@@ -83,10 +82,6 @@ public class NodeRestIntegrationTest {
         //then
         resultActions.andExpect(status().isBadRequest())
                 .andDo(print());
-    }
-
-    private void givenInvalidPayloadForRootNode() {
-        nodePayload = NodePayload.builder().parentId(UUID.randomUUID()).build();
     }
 
     @Test
@@ -261,6 +256,10 @@ public class NodeRestIntegrationTest {
     private void givenNodePayload() {
         givenRootNode();
         nodePayload = NodePayload.builder().parentId(root.getId()).rootId(root.getId()).build();
+    }
+
+    private void givenInvalidPayloadForRootNode() {
+        nodePayload = NodePayload.builder().parentId(UUID.randomUUID()).build();
     }
 
 }
