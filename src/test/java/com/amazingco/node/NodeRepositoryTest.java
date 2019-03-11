@@ -70,6 +70,28 @@ public class NodeRepositoryTest {
         thenThrownBy(() -> nodeRepository.saveAndFlush(node)).isInstanceOf(ConstraintViolationException.class);
     }
 
+    @Test
+    public void should_fail_to_persist_node_with_parent_without_root() {
+
+        //given
+        givenParentNode();
+        node = Node.builder().height(1).parent(parentNode).build();
+
+        //when/then
+        thenThrownBy(() -> nodeRepository.saveAndFlush(node)).isInstanceOf(ConstraintViolationException.class);
+    }
+
+    @Test
+    public void should_fail_to_persist_node_with_root_without_parent() {
+
+        //given
+        givenParentNode();
+        node = Node.builder().height(1).root(parentNode).build();
+
+        //when/then
+        thenThrownBy(() -> nodeRepository.saveAndFlush(node)).isInstanceOf(ConstraintViolationException.class);
+    }
+
     private void givenSavedNodeWithParent() {
         givenNodeWithParent(1);
         nodeRepository.saveAndFlush(node);
