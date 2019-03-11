@@ -13,7 +13,7 @@ import static java.lang.annotation.ElementType.TYPE;
 @Retention(RetentionPolicy.RUNTIME)
 @interface NodeConstraint {
 
-    String message() default "Height of the Node should be higher then the height of the Parent Node";
+    String message() default "Child node must be higher then the parent node";
 
     Class<?>[] groups() default {};
 
