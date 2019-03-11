@@ -20,7 +20,7 @@ public class NodeController {
     @Autowired
     private NodeService nodeService;
 
-    @PostMapping()
+    @PostMapping
     public ResponseEntity<Node> createNode(@RequestBody NodePayload nodePayload) {
         Node node = nodeService.createNode(nodePayload);
         return ResponseEntity.ok().body(node);

@@ -55,8 +55,8 @@ public class NodeRepositoryTest {
 
         //then
         then(allNodes.size()).isEqualTo(2);
-        then(allNodes.get(1).getParent()).isEqualTo(parentNode);
-        then(allNodes.get(1).getRoot()).isEqualTo(parentNode);
+        then(allNodes.get(1).getParent().getId()).isEqualTo(parentNode.getId());
+        then(allNodes.get(1).getRoot().getId()).isEqualTo(parentNode.getId());
         then(allNodes.get(1).getId()).isNotNull();
     }
 
