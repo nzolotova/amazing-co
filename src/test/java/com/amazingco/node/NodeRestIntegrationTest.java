@@ -1,6 +1,9 @@
 package com.amazingco.node;
 
+import com.amazingco.node.NodeController.NodePayload;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +18,8 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,14 +35,63 @@ public class NodeRestIntegrationTest {
     @Autowired
     private NodeRepository nodeRepository;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     private ResultActions resultActions;
 
     private Node root;
 
     private Node nodeToCheck;
 
+    private NodePayload nodePayload;
+
+    @Before
+    public void setUp(){
+        nodeRepository.deleteAll();
+    }
+
     @Test
-    public void should_get_root_node_children() throws Exception {
+    @SneakyThrows
+    public void should_create_node() {
+
+        //given
+        givenNodePayload();
+
+        //when
+        whenCreateNode();
+
+        //then
+        resultActions.andExpect(status().isOk())
+                .andExpect(jsonPath("id").isNotEmpty())
+                .andExpect(jsonPath("parent.id", is(root.getId().toString())))
+                .andExpect(jsonPath("root.id", is(root.getId().toString())))
+                .andExpect(jsonPath("height", is(1)))
+                .andDo(print());
+    }
+
+    @Test
+    @SneakyThrows
+    public void should_fail_to_create_node_with_invalid_payload() {
+
+        //given
+        givenInvalidPayloadForRootNode();
+
+        //when
+        whenCreateNode();
+
+        //then
+        resultActions.andExpect(status().isBadRequest())
+                .andDo(print());
+    }
+
+    private void givenInvalidPayloadForRootNode() {
+        nodePayload = NodePayload.builder().parentId(UUID.randomUUID()).build();
+    }
+
+    @Test
+    @SneakyThrows
+    public void should_get_root_node_children() {
 
         //given
         givenTreeWithNodes();
@@ -49,12 +101,13 @@ public class NodeRestIntegrationTest {
 
         //then
         resultActions.andExpect(status().isOk())
-                .andExpect(jsonPath("children", hasSize(4)))
+                .andExpect(jsonPath("children", hasSize(8)))
                 .andDo(print());
     }
 
     @Test
-    public void should_get_any_node_children() throws Exception {
+    @SneakyThrows
+    public void should_get_any_node_children() {
 
         //given
         givenTreeWithNodes();
@@ -69,7 +122,8 @@ public class NodeRestIntegrationTest {
     }
 
     @Test
-    public void should_fail_to_get_children_for_non_existing_node() throws Exception {
+    @SneakyThrows
+    public void should_fail_to_get_children_for_non_existing_node() {
 
         //given
         givenTreeWithNodes();
@@ -83,7 +137,8 @@ public class NodeRestIntegrationTest {
     }
 
     @Test
-    public void should_update_node_with_new_parent_node() throws Exception {
+    @SneakyThrows
+    public void should_update_node_with_new_parent_node() {
 
         //given
         givenTreeWithNodes();
@@ -98,7 +153,8 @@ public class NodeRestIntegrationTest {
     }
 
     @Test
-    public void should_fail_to_update_non_existing_node() throws Exception {
+    @SneakyThrows
+    public void should_fail_to_update_non_existing_node() {
 
         //given
         givenTreeWithNodes();
@@ -111,10 +167,27 @@ public class NodeRestIntegrationTest {
                 .andDo(print());
     }
 
+    @Test
+    @SneakyThrows
+    public void should_fail_to_update_with_non_existing_parent() {
+
+        //given
+        givenTreeWithNodes();
+
+        //when
+        resultActions = mockMvc.perform(
+                patch("/nodes/{nodeId}/parent", nodeToCheck.getId())
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"parentId\" : \"" + UUID.randomUUID() + "\"}"))
+        ;
+
+        //then
+        resultActions.andExpect(status().isBadRequest())
+                .andDo(print());
+    }
 
     private void givenTreeWithNodes() {
-        root = Node.builder().build();
-        nodeRepository.saveAndFlush(root);
+        givenRootNode();
 
         Node node1 = Node.builder().parent(root).root(root).height(1).build();
         nodeRepository.saveAndFlush(node1);
@@ -142,6 +215,11 @@ public class NodeRestIntegrationTest {
 
     }
 
+    private void givenRootNode() {
+        root = Node.builder().build();
+        nodeRepository.saveAndFlush(root);
+    }
+
     private void whenGetChildren(UUID nodeId) throws Exception {
         resultActions = mockMvc.perform(get("/nodes/{nodeId}/children", nodeId));
     }
@@ -160,7 +238,7 @@ public class NodeRestIntegrationTest {
     private void whenUpdateParentWithRootNode(UUID id) throws Exception {
         resultActions = mockMvc.perform(
                 patch("/nodes/{nodeId}/parent", id)
-                        .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(APPLICATION_JSON)
                         .content("{\"parentId\" : \"" + root.getId().toString() + "\"}"))
         ;
     }
@@ -172,5 +250,17 @@ public class NodeRestIntegrationTest {
                 .andDo(print());
     }
 
+    @SneakyThrows
+    private void whenCreateNode() {
+        resultActions = mockMvc.perform(post("/nodes")
+                .contentType(APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(nodePayload)));
+
+    }
+
+    private void givenNodePayload() {
+        givenRootNode();
+        nodePayload = NodePayload.builder().parentId(root.getId()).rootId(root.getId()).build();
+    }
 
 }

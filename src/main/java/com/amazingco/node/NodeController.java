@@ -23,7 +23,6 @@ public class NodeController {
     @PostMapping()
     public ResponseEntity<Node> createNode(@RequestBody NodePayload nodePayload) {
         Node node = nodeService.createNode(nodePayload);
-
         return ResponseEntity.ok().body(node);
     }
 

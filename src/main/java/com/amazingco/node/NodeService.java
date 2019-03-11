@@ -1,6 +1,7 @@
 package com.amazingco.node;
 
 import com.amazingco.node.NodeController.NodePayload;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,15 +10,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 class NodeService {
 
     @Autowired
     private NodeRepository nodeRepository;
 
-    private List<Node> children = new ArrayList<>();
+    private List<Node> children;
 
     List<Node> getChildren(Node node) {
+        children = new ArrayList<>();
 
         if (node.getRoot() == null) {
             return nodeRepository.findByRootId(node.getId());
@@ -35,19 +38,51 @@ class NodeService {
         currentChildren.forEach(child -> findChildren(child.getId()));
     }
 
-    Node createNode(NodePayload node) {
-        if(node.getParentId() == null){
-
+    Node createNode(NodePayload nodePayload) {
+        if(nodePayload.getParentId() == null){
+           return nodeRepository.saveAndFlush(Node.builder().build());
         }
 
-        return nodeRepository.saveAndFlush(
-                Node.builder().height(0).build());
+        validatePayload(nodePayload);
+
+        Optional<Node> parentNode = nodeRepository.findById(nodePayload.getParentId());
+        Optional<Node> rootNode = nodeRepository.findById(nodePayload.getRootId());
+
+        validateParentAndRootNodes(nodePayload, parentNode, rootNode);
+
+        Node node = Node.builder()
+                .height(parentNode.get().getHeight() + 1)
+                .parent(parentNode.get())
+                .root(rootNode.get())
+                .build();
+
+        Node newNode = nodeRepository.saveAndFlush(node);
+
+        log.info("New node is created with the id = %s", newNode.getId());
+
+        return newNode;
+    }
+
+    private void validatePayload(NodePayload nodePayload) {
+        if(nodePayload.getParentId() != null && nodePayload.getRootId() == null){
+            throw new NodeException("Child node must have root and parent node");
+        }
+    }
+
+    private void validateParentAndRootNodes(NodePayload node, Optional<Node> parentNode, Optional<Node> rootNode) {
+        if(!parentNode.isPresent()){
+            throw new NodeException(String.format("Node with the id = %s does not exist", node.getParentId()));
+        }
+
+        if(!rootNode.isPresent()){
+            throw new NodeException(String.format("Node with the id = %s does not exist", node.getRootId()));
+        }
     }
 
     Node updateParent(Node currentNode, UUID parentNodeId) {
         Optional<Node> parentNode = nodeRepository.findById(parentNodeId);
 
-        parentNode.map(parent -> {
+        return parentNode.map(parent -> {
             int newNodeHeight = parent.getHeight() + 1;
             int diffHeight = currentNode.getHeight() - newNodeHeight;
             currentNode.setHeight(newNodeHeight);
@@ -55,10 +90,10 @@ class NodeService {
 
             updateChildrenNodesHeight(currentNode, diffHeight);
 
+            log.info("Node with id = %s and its children are updated.", currentNode.getId() );
+
             return nodeRepository.saveAndFlush(currentNode);
         }).orElseThrow(() -> new NodeException(String.format("Node with the id = %s does not exist", parentNodeId)));
-
-        return nodeRepository.saveAndFlush(currentNode);
     }
 
     private void updateChildrenNodesHeight(Node currentNode, int diffHeight) {
@@ -70,7 +105,7 @@ class NodeService {
         });
     }
 
-    private class NodeException extends RuntimeException {
+    class NodeException extends RuntimeException {
 
         NodeException(String message) {
             super(message);
