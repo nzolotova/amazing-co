@@ -1,6 +1,4 @@
-FROM openjdk:8-jdk-alpine
-
-VOLUME /tmp
+FROM openjdk:8-jre-alpine
 
 ARG JAR_FILE=build/libs/amazing-co-0.1.0.jar
 

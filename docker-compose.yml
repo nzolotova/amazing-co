@@ -1,9 +1,6 @@
 version: '2.2'
 services:
-  amazing-co:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    image: amazingco
+  amazing-co-1:
+    build: .
     ports:
-      - 8080
+      - "8080:8080"
