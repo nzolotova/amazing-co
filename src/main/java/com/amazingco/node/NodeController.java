@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
 @RestController
 @RequestMapping(path = "/nodes")
 public class NodeController {
@@ -31,16 +33,16 @@ public class NodeController {
 
         return node.map(node1 -> nodeService.getChildren(node1))
                 .map(children -> ResponseEntity.ok(new GetChildrenResponse(children)))
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(new ResponseEntity<>(NOT_FOUND));
     }
 
-    @PatchMapping("/{nodeId}/parent")
+    @PutMapping("/{nodeId}/parent")
     public ResponseEntity<Node> updateParent(@PathVariable("nodeId") Optional<Node> node,
                                              @RequestBody UpdateParentRequest updateParentRequest) {
 
         return node.map(currentNode -> nodeService.updateParent(currentNode, updateParentRequest.getParentId()))
                 .map(updatedNode -> ResponseEntity.ok().body(updatedNode))
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(new ResponseEntity<>(NOT_FOUND));
     }
 
     @Getter

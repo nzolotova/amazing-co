@@ -2,6 +2,8 @@ package com.amazingco.node;
 
 import com.amazingco.node.NodeController.NodePayload;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@Slf4j
 @Service
 class NodeService {
 
@@ -41,8 +42,6 @@ class NodeService {
 
             updateChildrenNodesHeight(currentNode, diffHeight);
 
-            log.info("Node with id = %s and its children are updated.", currentNode.getId());
-
             return nodeRepository.saveAndFlush(currentNode);
         }).orElseThrow(() -> new NodeException(String.format("Node with the id = %s does not exist", parentNodeId)));
     }
@@ -51,7 +50,7 @@ class NodeService {
 
         validatePayload(nodePayload);
 
-        if (nodePayload.getParentId() == null) {
+        if (nodePayload.getRootId() == null ) {
             return nodeRepository.saveAndFlush(Node.builder().build());
         }
 
@@ -66,11 +65,7 @@ class NodeService {
                 .root(rootNode.get())
                 .build();
 
-        Node newNode = nodeRepository.saveAndFlush(node);
-
-        log.info("New node is created with the id = %s", newNode.getId());
-
-        return newNode;
+        return nodeRepository.saveAndFlush(node);
     }
 
     private void findChildren(UUID id) {
@@ -84,6 +79,10 @@ class NodeService {
     private void validatePayload(NodePayload nodePayload) {
         if (hasParentAndNoRoot(nodePayload) || hasRootAndNoParent(nodePayload)) {
             throw new NodeException("Child node must have root and parent node");
+        }
+
+        if(nodePayload.getRootId() == null && !nodeRepository.findByParentId(null).isEmpty()){
+            throw new NodeException("Root Node already exists in the tree.");
         }
     }
 

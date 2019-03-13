@@ -71,7 +71,7 @@ public class NodeRestIntegrationTest {
 
     @Test
     @SneakyThrows
-    public void should_fail_to_create_node_with_invalid_payload() {
+    public void should_fail_to_create_a_root_node_with_invalid_payload() {
 
         //given
         givenInvalidPayloadForRootNode();
@@ -86,7 +86,7 @@ public class NodeRestIntegrationTest {
 
     @Test
     @SneakyThrows
-    public void should_get_root_node_children() {
+    public void should_get_children_of_root_node() {
 
         //given
         givenTreeWithNodes();
@@ -133,13 +133,13 @@ public class NodeRestIntegrationTest {
 
     @Test
     @SneakyThrows
-    public void should_update_node_with_new_parent_node() {
+    public void should_set_a_new_parent_node() {
 
         //given
         givenTreeWithNodes();
 
         //when
-        whenUpdateParentWithRootNode(nodeToCheck.getId());
+        whenSetParentAsRootNode(nodeToCheck.getId());
 
         //then
         thenTheHeightIsUpdatedAndParentNodeIsRoot();
@@ -155,7 +155,7 @@ public class NodeRestIntegrationTest {
         givenTreeWithNodes();
 
         //when
-        whenUpdateParentWithRootNode(UUID.randomUUID());
+        whenSetParentAsRootNode(UUID.randomUUID());
 
         //then
         resultActions.andExpect(status().isNotFound())
@@ -164,14 +164,14 @@ public class NodeRestIntegrationTest {
 
     @Test
     @SneakyThrows
-    public void should_fail_to_update_with_non_existing_parent() {
+    public void should_fail_to_set_parent_with_non_existing_node() {
 
         //given
         givenTreeWithNodes();
 
         //when
         resultActions = mockMvc.perform(
-                patch("/nodes/{nodeId}/parent", nodeToCheck.getId())
+                put("/nodes/{nodeId}/parent", nodeToCheck.getId())
                         .contentType(APPLICATION_JSON)
                         .content("{\"parentId\" : \"" + UUID.randomUUID() + "\"}"))
         ;
@@ -230,9 +230,9 @@ public class NodeRestIntegrationTest {
                 .andExpect(jsonPath("children[3].height", is(3)));
     }
 
-    private void whenUpdateParentWithRootNode(UUID id) throws Exception {
+    private void whenSetParentAsRootNode(UUID nodeId) throws Exception {
         resultActions = mockMvc.perform(
-                patch("/nodes/{nodeId}/parent", id)
+                put("/nodes/{nodeId}/parent", nodeId)
                         .contentType(APPLICATION_JSON)
                         .content("{\"parentId\" : \"" + root.getId().toString() + "\"}"))
         ;

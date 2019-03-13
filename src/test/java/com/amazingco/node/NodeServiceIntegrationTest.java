@@ -117,6 +117,17 @@ public class NodeServiceIntegrationTest {
         thenThrownBy(this::whenCreateNode).isInstanceOf(NodeException.class);
     }
 
+    @Test
+    public void should_fail_to_create_second_root() {
+
+        //given
+        givenRootNode();
+        nodePayload = NodePayload.builder().build();
+
+        //when / then
+        thenThrownBy(this::whenCreateNode).isInstanceOf(NodeException.class);
+    }
+
     private void whenCreateNode() {
         node = nodeService.createNode(nodePayload);
     }
