@@ -81,7 +81,7 @@ It has three endpoints:
         * rootId and parentId can be null or set at the same time. It's forbidden to have only rootId or only parentId.
     * Height of the node is calculated at the creation step depending on the height of the parentnode.
 2. Get children of the node
-    * Request: GET /nodes/{nodeId}
+    * Request: GET /nodes/{nodeId}/children
     * Responce payload is a list of children nodes:
     ```json
     {
