@@ -1,4 +1,4 @@
-# amazing-co
+# AmazingCo
 
 ## Task description
 
