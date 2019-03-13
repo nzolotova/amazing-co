@@ -32,7 +32,7 @@ Each node should have the following info:
 
 Our boss is evil and we can only have docker and docker-compose on our machines. So your server needs to be run using them.
 
-## API Documentation to the amzingco project
+## API Documentation for the AmzingCo
 
 This is a Spring Boot Microservices with REST API.
 
