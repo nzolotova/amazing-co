@@ -41,24 +41,24 @@ It has three endpoints:
     * Request: POST /nodes
     * Payload example for the root node:
     ```json
-    "{
+    {
         "parentId" : null,
         "rootId" : null
-    }"
+    }
     ```
     * Payload example for the child node:
     ```json
-    "{
+    {
         "parentId" : "5043675a-1792-4ad1-9a97-0d17aa0382c2",
         "rootId" : "5043675a-1792-4ad1-9a97-0d17aa0382c2"
-    }"
+    }
     ```
 
     Note: parentId and rootId should be in UUID format.
 
     * Respose payload is a Node resourse:
     ```json
-    "{
+    {
         "id": "aa11325a-d707-468c-8ece-146e317ec2df",
         "parent": {
             "id": "5043675a-1792-4ad1-9a97-0d17aa0382c2",
@@ -73,7 +73,7 @@ It has three endpoints:
             "height": 0
         },
         "height": 1
-    }"
+    }
     ```
 
     * Constraints for the payload (Can be changed accroding to business requirements):
@@ -129,9 +129,9 @@ It has three endpoints:
     * Request: PUT /nodes/{nodeId}/parent
     * Request payload contains parentId:
     ```json
-    "{
+    {
         "parentId" : "aa11325a-d707-468c-8ece-146e317ec2df"
-    }"
+    }
     ```
     * Responce payload contains a Node resource with the new parentId as in the create endpoint.
     * Height of the node and its children is recalculated according to the height of the new parent.
